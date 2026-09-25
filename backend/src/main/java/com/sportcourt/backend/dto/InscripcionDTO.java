@@ -16,6 +16,7 @@ public class InscripcionDTO {
     @Positive(message = "El ID de la clase debe ser un número positivo")
     private Integer claseId;
 
+    @NotNull(message = "La fecha es requerida")
     @FutureOrPresent(message = "La fecha no puede ser en el pasado")
     private LocalDate fecha;
 
