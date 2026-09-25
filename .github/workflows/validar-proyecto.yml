@@ -1,0 +1,50 @@
+name: Validar proyecto
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  validar-frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Revisar script.js
+        run: npm test
+
+      - name: Compilar Tailwind CSS
+        run: npm run build:css
+
+  validar-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Dar permiso de ejecución a mvnw
+        working-directory: backend
+        run: chmod +x mvnw
+
+      - name: Ejecutar tests del backend (perfil test, H2 en memoria)
+        working-directory: backend
+        run: ./mvnw -B test

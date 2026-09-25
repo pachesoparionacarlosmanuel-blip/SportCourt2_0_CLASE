@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com data:; font-src 'self'; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080; object-src 'none'; base-uri 'self'; form-action 'self';">
+<title>SportCourt Perú - Panel Admin</title>
+  <link rel="stylesheet" href="assets/css/app.min.css">
+</head>
+<body data-page="admin">
+
+  <nav class="navbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">SC</span>
+      <span class="brand-name">SportCourt <span>Perú</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Inicio</a>
+      <a href="canchas.html">Canchas</a>
+      <a href="clases.html">Clases</a>
+      <a href="reservas.html">Mis Reservas</a>
+      <a href="perfil.html">Perfil</a>
+      <a href="admin.html" class="admin-link active">Panel Admin</a>
+    </div>
+    <a class="user-chip" href="perfil.html">
+      <span class="avatar">A</span>
+      <span>Admin</span>
+    </a>
+  </nav>
+
+  <main class="content">
+
+    <div class="admin-header">
+      <div>
+        <h1>Panel de Administración</h1>
+        <p class="subtitle-page">Gestiona canchas, clases y reservas de toda la plataforma</p>
+      </div>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="canchas">Canchas</button>
+      <button class="admin-tab" data-tab="clases">Clases</button>
+      <button class="admin-tab" data-tab="reservas">Reservas</button>
+    </div>
+
+    <section class="admin-panel active" id="panel-canchas">
+      <div class="admin-toolbar">
+        <h2>Todas las canchas</h2>
+        <button class="add-btn" id="add-court-btn">+ Agregar cancha</button>
+      </div>
+      <div class="admin-grid" id="admin-courts-grid"></div>
+    </section>
+
+    <section class="admin-panel" id="panel-clases">
+      <div class="admin-toolbar">
+        <h2>Todas las clases</h2>
+        <button class="add-btn" id="add-class-btn">+ Agregar clase</button>
+      </div>
+      <div class="admin-grid" id="admin-classes-grid"></div>
+    </section>
+
+    <section class="admin-panel" id="panel-reservas">
+      <div class="admin-toolbar">
+        <h2>Todas las reservas</h2>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Cancha / clase</th>
+            <th>Fecha y hora</th>
+            <th>Precio</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="admin-reservations-body"></tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <div class="form-panel" id="form-panel">
+    <div class="form-panel-inner" id="form-panel-inner"></div>
+  </div>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>

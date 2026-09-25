@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com data:; font-src 'self'; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>SportCourt Perú - Clases y Academias</title>
+  <link rel="stylesheet" href="assets/css/app.min.css">
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">SC</span>
+      <span class="brand-name">SportCourt <span>Perú</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Inicio</a>
+      <a href="canchas.html">Canchas</a>
+      <a href="clases.html" class="active">Clases</a>
+      <a href="reservas.html">Mis Reservas</a>
+      <a href="perfil.html">Perfil</a>
+      <a href="admin.html" class="admin-link">Panel Admin</a>
+    </div>
+    <a class="user-chip" href="perfil.html">
+      <span class="avatar">C</span>
+      <span>Carlos</span>
+    </a>
+  </nav>
+
+  <main class="content pt-11">
+
+    <h1 class="text-4xl font-bold mb-1.5">Clases y Academias</h1>
+    <p class="text-muted text-lg mb-9">Entrena con los mejores instructores certificados de Lima</p>
+
+    <div class="classes-grid" id="classes-grid">
+
+      <article class="class-card">
+        <div class="class-top">
+          <div class="class-icon">⚽</div>
+          <span class="class-slots low">3 cupos</span>
+        </div>
+        <h3>Fútbol Infantil</h3>
+        <p class="class-level">6–12 años</p>
+        <div class="class-meta">
+          <div class="class-meta-row"><span class="meta-icon">🕒</span> Lun / Mié / Vie · 4:00pm</div>
+          <div class="class-meta-row"><span class="meta-icon">👨‍🏫</span> Prof. Marco Torres</div>
+        </div>
+        <div class="class-footer">
+          <div class="class-price">S/ 180 <span>/mes</span></div>
+          <button class="enroll-btn" data-id="1">Inscribirse</button>
+        </div>
+      </article>
+
+      <article class="class-card">
+        <div class="class-top">
+          <div class="class-icon">🎾</div>
+          <span class="class-slots ok">5 cupos</span>
+        </div>
+        <h3>Tenis Principiantes</h3>
+        <p class="class-level">Adultos</p>
+        <div class="class-meta">
+          <div class="class-meta-row"><span class="meta-icon">🕒</span> Mar / Jue · 7:00am</div>
+          <div class="class-meta-row"><span class="meta-icon">👨‍🏫</span> Prof. Ana Quispe</div>
+        </div>
+        <div class="class-footer">
+          <div class="class-price">S/ 220 <span>/mes</span></div>
+          <button class="enroll-btn" data-id="2">Inscribirse</button>
+        </div>
+      </article>
+
+      <article class="class-card">
+        <div class="class-top">
+          <div class="class-icon">🏊</div>
+          <span class="class-slots ok">8 cupos</span>
+        </div>
+        <h3>Natación Libre</h3>
+        <p class="class-level">Todas las edades</p>
+        <div class="class-meta">
+          <div class="class-meta-row"><span class="meta-icon">🕒</span> Diario · 6:00am</div>
+          <div class="class-meta-row"><span class="meta-icon">👨‍🏫</span> Prof. Luis Vera</div>
+        </div>
+        <div class="class-footer">
+          <div class="class-price">S/ 150 <span>/mes</span></div>
+          <button class="enroll-btn" data-id="3">Inscribirse</button>
+        </div>
+      </article>
+
+      <article class="class-card">
+        <div class="class-top">
+          <div class="class-icon">🥋</div>
+          <span class="class-slots low">2 cupos</span>
+        </div>
+        <h3>Fútsal Avanzado</h3>
+        <p class="class-level">18+ años</p>
+        <div class="class-meta">
+          <div class="class-meta-row"><span class="meta-icon">🕒</span> Sáb / Dom · 8:00am</div>
+          <div class="class-meta-row"><span class="meta-icon">👨‍🏫</span> Prof. Roberto Díaz</div>
+        </div>
+        <div class="class-footer">
+          <div class="class-price">S/ 200 <span>/mes</span></div>
+          <button class="enroll-btn" data-id="4">Inscribirse</button>
+        </div>
+      </article>
+
+      <article class="class-card">
+        <div class="class-top">
+          <div class="class-icon">🏓</div>
+          <span class="class-slots ok">4 cupos</span>
+        </div>
+        <h3>Pádel Intermedio</h3>
+        <p class="class-level">Adultos</p>
+        <div class="class-meta">
+          <div class="class-meta-row"><span class="meta-icon">🕒</span> Mar / Vie · 6:00pm</div>
+          <div class="class-meta-row"><span class="meta-icon">👨‍🏫</span> Prof. Sofía Medina</div>
+        </div>
+        <div class="class-footer">
+          <div class="class-price">S/ 240 <span>/mes</span></div>
+          <button class="enroll-btn" data-id="5">Inscribirse</button>
+        </div>
+      </article>
+
+      <article class="class-card">
+        <div class="class-top">
+          <div class="class-icon">💧</div>
+          <span class="class-slots ok">6 cupos</span>
+        </div>
+        <h3>Aqua Aeróbicos</h3>
+        <p class="class-level">Adultos mayores</p>
+        <div class="class-meta">
+          <div class="class-meta-row"><span class="meta-icon">🕒</span> Lun / Mié · 9:00am</div>
+          <div class="class-meta-row"><span class="meta-icon">👨‍🏫</span> Prof. Carmen López</div>
+        </div>
+        <div class="class-footer">
+          <div class="class-price">S/ 130 <span>/mes</span></div>
+          <button class="enroll-btn" data-id="6">Inscribirse</button>
+        </div>
+      </article>
+
+    </div>
+
+  </main>
+
+  <script src="assets/js/app.js"></script>
+</body>
+
+</html>

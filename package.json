@@ -1,0 +1,26 @@
+{
+  "name": "sportcourt2.0",
+  "version": "1.0.0",
+  "description": "Sistema web para la gestión de canchas deportivas, clases, reservas e inscripciones.",
+  "scripts": {
+    "dev": "npx @tailwindcss/cli -i ./frontend/assets/css/app.css -o ./frontend/assets/css/app.min.css --watch",
+    "build:css": "npx @tailwindcss/cli -i ./frontend/assets/css/app.css -o ./frontend/assets/css/app.min.css --minify",
+    "test": "node --check frontend/assets/js/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2.0.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2.0/issues"
+  },
+  "homepage": "https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2.0#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

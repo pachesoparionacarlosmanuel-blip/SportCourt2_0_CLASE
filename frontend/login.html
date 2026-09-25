@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com data:; font-src 'self'; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <title>SportCourt Perú - Iniciar sesión</title>
+  <link rel="stylesheet" href="assets/css/app.min.css">
+</head>
+
+<body>
+  <div class="screen">
+    <section class="visual">
+      <div class="visual-content">
+        <span class="badge">🏆 #1 Complejo Deportivo de Lima</span>
+        <h1>Reserva tu cancha en segundos.</h1>
+        <p>Más de 200 canchas disponibles. Fulbito, fútbol, tenis y piscinas en el mejor complejo deportivo del Perú.
+        </p>
+        <div class="visual-stats">
+          <div>
+            <div class="visual-stat-num">2,400+</div>
+            <div class="visual-stat-label">Usuarios activos</div>
+          </div>
+          <div>
+            <div class="visual-stat-num">98%</div>
+            <div class="visual-stat-label">Satisfacción</div>
+          </div>
+          <div>
+            <div class="visual-stat-num">6</div>
+            <div class="visual-stat-label">Canchas premium</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="form-side">
+      <div class="form-wrap">
+        <div class="brand">
+          <span class="brand-mark">SC</span>
+          <span>SportCourt <span class="accent">Perú</span></span>
+        </div>
+        <h2>Bienvenido</h2>
+        <p class="subtitle">Inicia sesión para gestionar tus reservas</p>
+        <form id="login-form">
+          <div class="field">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" placeholder="carlos@email.com" required>
+          </div>
+          <div class="field">
+            <div class="field-row">
+              <label for="password">Contraseña</label>
+              <a href="#" class="forgot">¿Olvidaste tu contraseña?</a>
+            </div>
+            <input type="password" id="password" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="submit-btn">Iniciar sesión</button>
+        </form>
+        <div class="divider">o continúa con</div>
+        <div class="social-row">
+          <button class="social-btn google" type="button"><span class="g-icon">G</span> Google</button>
+          <button class="social-btn facebook" type="button">f Facebook</button>
+        </div>
+        <p class="signup-line">¿No tienes cuenta? <a href="#">Regístrate gratis</a></p>
+        <p class="guest-line"><a href="#" id="guest-link">Continuar como invitado →</a></p>
+      </div>
+    </section>
+  </div>
+  <script src="assets/js/app.js"></script>
+</body>
+
+</html>
