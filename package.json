@@ -9,16 +9,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2.0.git"
+    "url": "git+https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2_0_CLASE.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2.0/issues"
+    "url": "https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2_0_CLASE/issues"
   },
-  "homepage": "https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2.0#readme",
+  "homepage": "https://github.com/pachesoparionacarlosmanuel-blip/SportCourt2_0_CLASE#readme",
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
     "tailwindcss": "^4.3.3"
