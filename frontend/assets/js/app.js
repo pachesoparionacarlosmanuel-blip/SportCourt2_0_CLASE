@@ -268,7 +268,7 @@ if (courtsGrid) {
         '<h3>' + escapeHtml(c.name) + '</h3>' +
         '<p>' + escapeHtml(c.desc || 'Cancha deportiva disponible para reservas.') + '</p>' +
         '<div class=\"court-footer\"><div class=\"court-price\">S/ ' + Number(c.price || 0) + ' <span>/ hora</span></div>' +
-        '<div class=\"court-capacity\">👥 hasta ' + Number(c.capacity || 0) + '</div></div>' +
+        '<div class=\"court-capacity\">👥 ' + (Number(c.capacity) > 0 ? 'hasta ' + Number(c.capacity) : 'Capacidad no indicada') + '</div></div>' +
         (available ? '<button class=\"reserve-btn\" type=\"button\">Reservar cancha</button>' : '<button class=\"reserve-btn\" type=\"button\" disabled>No disponible</button>') +
         '</div></article>';
     }).join('');
@@ -305,7 +305,22 @@ if (courtsGrid) {
       renderPublicCourts();
     }
 
+    resaltarCanchaSolicitada();
   });
+
+  // Si se llega desde "Ver cancha" (canchas.html?cancha=ID), desplaza la
+  // vista hasta esa cancha y la resalta.
+  function resaltarCanchaSolicitada() {
+    const id = new URLSearchParams(window.location.search).get('cancha');
+    if (!id) return;
+    const card = Array.from(courtsGrid.querySelectorAll('.court-card')).find(function (c) {
+      return c.dataset.courtId === id;
+    });
+    if (!card) return;
+    card.style.outline = '3px solid #16a34a';
+    card.style.outlineOffset = '4px';
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 
   function applyFilters() {
     const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
@@ -633,7 +648,7 @@ if (reservasList) {
         '<h3>' + escapeHtml(r.item) + '</h3>' +
         '<div class="reserva-meta"><span>📅 ' + escapeHtml(r.date) + '</span><span>🕒 ' + escapeHtml(r.time) + '</span></div>' +
         '<div class="reserva-actions">' +
-        '<button class="ver-btn" type="button">Ver cancha</button>' +
+        '<button class="ver-btn" data-court-id="' + escapeHtml(r.courtId) + '" type="button">Ver cancha</button>' +
         (canCancel ? '<button class="cancel-btn" data-id="' + r.id + '" type="button">Cancelar</button>' : '') +
         '<button class="comprobante-btn" data-id="' + r.id + '" type="button">Descargar comprobante</button>' +
         '</div></div><div class="reserva-price"><div class="amount">S/ ' + r.price + '</div><div class="duration">1h</div></div></article>';
@@ -647,6 +662,12 @@ if (reservasList) {
   const tabs = document.querySelectorAll('.reservas-tab');
   tabs.forEach(function (tab) { tab.addEventListener('click', function () { tabs.forEach(function (t) { t.classList.remove('active'); }); tab.classList.add('active'); currentFilter = tab.dataset.tab; renderUserReservations(currentFilter); }); });
   reservasList.addEventListener('click', async function (e) {
+    const ver = e.target.closest('.ver-btn');
+    if (ver) {
+      // Lleva al catálogo de canchas y resalta la cancha de esta reserva
+      window.location.href = 'canchas.html?cancha=' + encodeURIComponent(ver.dataset.courtId || '');
+      return;
+    }
     const cancel = e.target.closest('.cancel-btn');
     if (cancel) {
       const id = cancel.dataset.id;
@@ -922,8 +943,19 @@ if (document.body.dataset.page === 'perfil') {
 // ---------------------------------------------
 const logoutBtn = document.getElementById('logout-btn');
 if (logoutBtn) {
-  logoutBtn.addEventListener('click', function (e) {
+  logoutBtn.addEventListener('click', async function (e) {
     e.preventDefault();
+    // Invalida la sesión HTTP en el backend; aunque falle la conexión, se
+    // limpia el estado local y se vuelve al login.
+    try {
+      await fetch(API_URL + '/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-XSRF-TOKEN': await getCsrfTokenAsync() }
+      });
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión en el servidor:', error);
+    }
     localStorage.removeItem('sportcourt_user');
     localStorage.removeItem('sportcourt_user_id');
     localStorage.removeItem('sportcourt_role');
@@ -1060,7 +1092,7 @@ if (document.body.dataset.page === 'admin' && getRole() === 'admin') {
         '</div>' +
         '<div class="admin-item-body">' +
         '<h3>' + escapeHtml(c.name) + '</h3>' +
-        '<p class="item-sub">' + escapeHtml(c.status.replace('_', ' ')) + ' · hasta ' + c.capacity + ' personas</p>' +
+        '<p class="item-sub">' + escapeHtml(c.status.replace('_', ' ')) + ' · ' + (Number(c.capacity) > 0 ? 'hasta ' + c.capacity + ' personas' : 'capacidad no indicada') + '</p>' +
         '<div class="item-price">S/ ' + c.price + ' /hora</div>' +
         '<div class="admin-item-actions">' +
         '<button class="edit-item-btn" data-type="court" data-id="' + c.id + '">Editar</button>' +

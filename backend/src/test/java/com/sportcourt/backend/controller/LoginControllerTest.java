@@ -87,4 +87,22 @@ class LoginControllerTest extends AbstractControllerTest {
         assertEquals("Email o contraseña incorrectos", body.get("message").asText());
         assertEquals("/api/login", body.get("path").asText());
     }
+
+    @Test
+    @DisplayName("POST /api/logout invalida la sesión en el servidor: la cookie antigua deja de servir")
+    void logoutInvalidaSesionEnServidor() throws Exception {
+        String email = uniqueEmail("logout");
+        crearUsuario(email, "UserPass123", "usuario");
+        Session session = login(email, "UserPass123");
+
+        // Con la sesión activa, un endpoint autenticado responde 200
+        assertEquals(200, get(session, "/api/reservas").statusCode());
+
+        HttpResponse<String> logout = mutate(session, "POST", "/api/logout", null);
+        assertEquals(204, logout.statusCode(), logout.body());
+
+        // Reutilizar la misma cookie JSESSIONID ya no autentica
+        assertNotEquals(200, get(session, "/api/reservas").statusCode(),
+                "Tras el logout la sesión del servidor debe estar invalidada");
+    }
 }

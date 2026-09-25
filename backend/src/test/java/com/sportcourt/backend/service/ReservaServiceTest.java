@@ -37,7 +37,7 @@ import static org.mockito.Mockito.*;
  * 2. Cancha existe
  * 3. Horarios válidos
  * 4. NO hay duplicados (horas superpuestas)
- * 5. Capacidad disponible
+ * 5. Cancha libre (una reserva ocupa la cancha completa)
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReservaService - Tests Unitarios")
@@ -111,7 +111,6 @@ public class ReservaServiceTest {
                 // Arrange
                 autenticarUsuario(1, "usuario@test.com", "USER");
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(10); // 10 de capacidad
                 when(reservaRepository.buscarReservasDuplicadas(
                                 eq(1),
                                 eq(1),
@@ -146,7 +145,6 @@ public class ReservaServiceTest {
         @DisplayName("🔒 El estado lo asigna el backend: se ignora el enviado por el cliente")
         void crearReservaIgnoraEstadoDelCliente() {
                 autenticarUsuario(1, "usuario@test.com", "USER");
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(10);
                 when(reservaRepository.save(any(Reserva.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -172,7 +170,6 @@ public class ReservaServiceTest {
                 reservaExistente.setEstado("confirmada");
 
                 when(reservaRepository.findById(1)).thenReturn(Optional.of(reservaExistente));
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
                 when(reservaRepository.save(any(Reserva.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -191,7 +188,6 @@ public class ReservaServiceTest {
 
                 // mockReserva pertenece al usuario 1
                 when(reservaRepository.findById(1)).thenReturn(Optional.of(mockReserva));
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
                 when(reservaRepository.save(any(Reserva.class)))
                                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -471,7 +467,6 @@ public class ReservaServiceTest {
                 reservaExistente.setEstado("activa");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(10); // 10 de capacidad
                 when(reservaRepository.buscarReservasDuplicadas(
                                 eq(1),
                                 eq(1),
@@ -507,14 +502,12 @@ public class ReservaServiceTest {
         // ==================== TESTS DE ERROR - VALIDACIÓN 5 ====================
 
         @Test
-        @DisplayName("❌ VALIDACIÓN 5: Capacidad no disponible")
+        @DisplayName("❌ VALIDACIÓN 5: Cancha ocupada por otra reserva en ese horario")
         void crearReservaSinCapacidad() {
-                // Arrange: Cancha con capacidad 1
+                // Arrange: la cancha ya tiene una reserva activa en ese horario
                 autenticarUsuario(1, "usuario@test.com", "USER");
 
-                when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha()); // capacidad 1
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
+                when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
                 // Ya hay 1 reserva activa
                 Reserva reservaExistente = new Reserva();
                 reservaExistente.setUsuarioId(2);
@@ -546,15 +539,14 @@ public class ReservaServiceTest {
         }
 
         @Test
-        @DisplayName("❌ VALIDACIÓN 5: Capacidad NULL en la cancha (dato legado) se trata como 1, sin NullPointerException")
-        void crearReservaConCapacidadNulaSeTrataComoUnaYRechazaSegundaReserva() {
-                // Arrange: Cancha sin capacidad definida en la BD (NULL)
+        @DisplayName("❌ VALIDACIÓN 5: La capacidad de la cancha no se consulta: una reserva activa la ocupa")
+        void crearReservaNoConsultaCapacidadYRechazaCanchaOcupada() {
+                // Arrange: la capacidad (incluso NULL en la BD) es solo informativa
                 autenticarUsuario(1, "usuario@test.com", "USER");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(null);
 
-                // Ya hay 1 reserva activa: con capacidad NULL tratada como 1, debe rechazar
+                // Ya hay 1 reserva activa de otro usuario en ese horario
                 Reserva reservaExistente = new Reserva();
                 reservaExistente.setUsuarioId(2);
                 reservaExistente.setCanchaId(1);
@@ -576,7 +568,45 @@ public class ReservaServiceTest {
                                 eq(LocalTime.of(11, 0)),
                                 isNull())).thenReturn(List.of(reservaExistente));
 
-                // Act & Assert: BusinessException (409), no NullPointerException (500)
+                // Act & Assert: BusinessException (409) sin consultar la capacidad
+                assertThrows(BusinessException.class, () -> {
+                        reservaService.crearReserva(validReservaDTO);
+                });
+
+                verify(canchaService, never()).obtenerCapacidadCancha(any());
+                verify(reservaRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("❌ VALIDACIÓN 5: Una superposición parcial con otra reserva también bloquea la cancha")
+        void crearReservaConSuperposicionParcialRechazada() {
+                // Arrange: otro usuario tiene 10:30-11:30; se intenta 10:00-11:00
+                autenticarUsuario(1, "usuario@test.com", "USER");
+
+                when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
+
+                Reserva reservaExistente = new Reserva();
+                reservaExistente.setUsuarioId(2);
+                reservaExistente.setCanchaId(1);
+                reservaExistente.setFecha(LocalDate.of(2026, 9, 10));
+                reservaExistente.setHoraInicio(LocalTime.of(10, 30));
+                reservaExistente.setHoraFin(LocalTime.of(11, 30));
+                reservaExistente.setEstado("confirmada");
+                when(reservaRepository.buscarReservasDuplicadas(
+                                eq(1),
+                                eq(1),
+                                eq(LocalDate.of(2026, 9, 10)),
+                                eq(LocalTime.of(10, 0)),
+                                eq(LocalTime.of(11, 0)),
+                                isNull())).thenReturn(List.of());
+                when(reservaRepository.buscarReservasSuperpuestas(
+                                eq(1),
+                                eq(LocalDate.of(2026, 9, 10)),
+                                any(LocalTime.class),
+                                any(LocalTime.class),
+                                isNull())).thenReturn(List.of(reservaExistente));
+
+                // Act & Assert
                 assertThrows(BusinessException.class, () -> {
                         reservaService.crearReserva(validReservaDTO);
                 });
@@ -585,55 +615,13 @@ public class ReservaServiceTest {
         }
 
         @Test
-        @DisplayName("✅ VALIDACIÓN 5: Capacidad disponible - reserva exitosa")
-        void crearReservaConCapacidad() {
-                // Arrange: Cancha con capacidad 2
-                autenticarUsuario(1, "usuario@test.com", "USER");
-
-                when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(2); // 2 de capacidad
-
-                // Ya hay 1 reserva activa
-                Reserva reservaExistente = new Reserva();
-                reservaExistente.setUsuarioId(2);
-                reservaExistente.setCanchaId(1);
-                reservaExistente.setFecha(LocalDate.of(2026, 9, 10));
-                reservaExistente.setHoraInicio(LocalTime.of(10, 0));
-                reservaExistente.setHoraFin(LocalTime.of(11, 0));
-                reservaExistente.setEstado("activa");
-                when(reservaRepository.buscarReservasDuplicadas(
-                                eq(1),
-                                eq(1),
-                                eq(LocalDate.of(2026, 9, 10)),
-                                eq(LocalTime.of(10, 0)),
-                                eq(LocalTime.of(11, 0)),
-                                isNull())).thenReturn(List.of());
-                when(reservaRepository.buscarReservasSuperpuestas(
-                                eq(1),
-                                eq(LocalDate.of(2026, 9, 10)),
-                                any(LocalTime.class),
-                                any(LocalTime.class),
-                                isNull())).thenReturn(List.of(reservaExistente));
-
-                when(reservaRepository.save(any(Reserva.class))).thenReturn(mockReserva);
-
-                // Act
-                Reserva resultado = reservaService.crearReserva(validReservaDTO);
-
-                // Assert
-                assertNotNull(resultado);
-                verify(reservaRepository).save(any(Reserva.class));
-        }
-
-        @Test
-        @DisplayName("Dos usuarios diferentes pueden reservar simultáneamente según la capacidad")
-        void dosUsuariosPuedenReservarSimultaneamente() {
+        @DisplayName("Dos usuarios diferentes NO pueden reservar la misma cancha en el mismo horario")
+        void dosUsuariosNoPuedenReservarSimultaneamente() {
 
                 // Arrange
                 autenticarUsuario(2, "usuario2@test.com", "USER");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(2);
 
                 // El usuario 2 no tiene una reserva duplicada
                 when(reservaRepository.buscarReservasDuplicadas(
@@ -661,8 +649,6 @@ public class ReservaServiceTest {
                                 eq(LocalTime.of(11, 0)),
                                 isNull())).thenReturn(List.of(reservaUsuario1));
 
-                when(reservaRepository.save(any(Reserva.class))).thenReturn(mockReserva);
-
                 ReservaDTO dtoUsuario2 = new ReservaDTO();
                 dtoUsuario2.setUsuarioId(2);
                 dtoUsuario2.setCanchaId(1);
@@ -671,12 +657,12 @@ public class ReservaServiceTest {
                 dtoUsuario2.setHoraFin(LocalTime.of(11, 0));
                 dtoUsuario2.setEstado("activa");
 
-                // Act
-                Reserva resultado = reservaService.crearReserva(dtoUsuario2);
+                // Act & Assert: la cancha ya está ocupada por el usuario 1
+                assertThrows(BusinessException.class, () -> {
+                        reservaService.crearReserva(dtoUsuario2);
+                });
 
-                // Assert
-                assertNotNull(resultado);
-                verify(reservaRepository).save(any(Reserva.class));
+                verify(reservaRepository, never()).save(any());
         }
 
         @Test
@@ -687,8 +673,6 @@ public class ReservaServiceTest {
                 autenticarUsuario(2, "usuario2@test.com", "USER");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 LocalDate fecha = LocalDate.of(2026, 9, 10);
                 LocalTime horaInicio = LocalTime.of(10, 0);
                 LocalTime horaFin = LocalTime.of(11, 0);
@@ -703,7 +687,7 @@ public class ReservaServiceTest {
                                 isNull())).thenReturn(List.of());
 
                 // La reserva existente está cancelada,
-                // por lo tanto NO debe ocupar capacidad.
+                // por lo tanto NO debe ocupar la cancha.
                 Reserva reservaCancelada = new Reserva();
                 reservaCancelada.setId(1);
                 reservaCancelada.setUsuarioId(1);
@@ -758,8 +742,6 @@ public class ReservaServiceTest {
 
                 when(reservaRepository.findById(reservaId))
                                 .thenReturn(Optional.of(reservaExistente));
-
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
 
                 // La propia reserva se excluye mediante su ID.
                 when(reservaRepository.buscarReservasDuplicadas(
@@ -855,7 +837,7 @@ public class ReservaServiceTest {
         }
 
         @Test
-        @DisplayName("Actualizar reserva rechaza horario sin capacidad")
+        @DisplayName("Actualizar reserva rechaza un horario con la cancha ocupada")
         void actualizarReservaRechazaHorarioSinCapacidad() {
 
                 // Arrange
@@ -877,8 +859,6 @@ public class ReservaServiceTest {
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
 
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 // No existe duplicado del mismo usuario.
                 when(reservaRepository.buscarReservasDuplicadas(
                                 eq(1),
@@ -888,7 +868,7 @@ public class ReservaServiceTest {
                                 eq(LocalTime.of(12, 0)),
                                 eq(reservaId))).thenReturn(List.of());
 
-                // La capacidad ya está ocupada por otra reserva.
+                // La cancha ya está ocupada por otra reserva.
                 Reserva otraReserva = new Reserva();
                 otraReserva.setId(2);
                 otraReserva.setUsuarioId(2);
@@ -929,8 +909,6 @@ public class ReservaServiceTest {
                 autenticarUsuario(2, "usuario2@test.com", "USER");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 LocalDate fecha = LocalDate.of(2026, 9, 10);
                 LocalTime horaInicio = LocalTime.of(10, 0);
                 LocalTime horaFin = LocalTime.of(11, 0);
@@ -999,8 +977,6 @@ public class ReservaServiceTest {
                                 .thenReturn(Optional.of(reservaExistente));
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 // No debe encontrar otra reserva duplicada.
                 // El ID 1 se excluye de la búsqueda.
                 when(reservaRepository.buscarReservasDuplicadas(
@@ -1011,7 +987,7 @@ public class ReservaServiceTest {
                                 eq(LocalTime.of(11, 0)),
                                 eq(1))).thenReturn(List.of());
 
-                // La propia reserva también se excluye de la búsqueda de capacidad.
+                // La propia reserva también se excluye de la búsqueda de reservas superpuestas.
                 when(reservaRepository.buscarReservasSuperpuestas(
                                 eq(1),
                                 eq(LocalDate.of(2026, 9, 10)),
@@ -1085,8 +1061,6 @@ public class ReservaServiceTest {
                                 eq(LocalTime.of(12, 30)),
                                 eq(1))).thenReturn(List.of(otraReserva));
 
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 ReservaDTO dto = new ReservaDTO();
                 dto.setUsuarioId(1);
                 dto.setCanchaId(1);
@@ -1113,8 +1087,6 @@ public class ReservaServiceTest {
                 autenticarUsuario(1, "usuario@test.com", "USER");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 LocalDate fecha = LocalDate.of(2026, 9, 10);
                 LocalTime horaInicio = LocalTime.of(10, 0);
                 LocalTime horaFin = LocalTime.of(11, 0);
@@ -1235,7 +1207,7 @@ public class ReservaServiceTest {
         }
 
         @Test
-        @DisplayName("No permite actualizar una reserva cuando se supera la capacidad")
+        @DisplayName("No permite actualizar una reserva a un horario con la cancha ocupada")
         void actualizarReservaSinCapacidad() {
 
                 // Arrange
@@ -1244,8 +1216,6 @@ public class ReservaServiceTest {
                 Integer reservaId = 1;
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 LocalDate fecha = LocalDate.of(2026, 9, 10);
                 LocalTime horaInicio = LocalTime.of(10, 0);
                 LocalTime horaFin = LocalTime.of(11, 0);
@@ -1308,7 +1278,7 @@ public class ReservaServiceTest {
         }
 
         @Test
-        @DisplayName("Permite actualizar una reserva cuando hay capacidad disponible")
+        @DisplayName("Permite actualizar una reserva cuando la cancha está libre")
         void actualizarReservaConCapacidad() {
 
                 // Arrange
@@ -1317,8 +1287,6 @@ public class ReservaServiceTest {
                 Integer reservaId = 1;
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 LocalDate fecha = LocalDate.of(2026, 9, 10);
                 LocalTime horaInicio = LocalTime.of(10, 0);
                 LocalTime horaFin = LocalTime.of(11, 0);
@@ -1382,8 +1350,6 @@ public class ReservaServiceTest {
                 autenticarUsuario(2, "usuario2@test.com", "USER");
 
                 when(canchaService.obtenerCancha(1)).thenReturn(createMockCancha());
-                when(canchaService.obtenerCapacidadCancha(1)).thenReturn(1);
-
                 LocalDate fecha = LocalDate.of(2026, 9, 10);
                 LocalTime horaInicio = LocalTime.of(10, 0);
                 LocalTime horaFin = LocalTime.of(11, 0);
@@ -1466,7 +1432,7 @@ public class ReservaServiceTest {
                                 eq(reservaId)))
                                 .thenReturn(List.of());
 
-                // La propia reserva también se excluye de la validación de capacidad
+                // La propia reserva también se excluye de la validación de cancha ocupada
                 when(reservaRepository.buscarReservasSuperpuestas(
                                 eq(1),
                                 eq(fecha),
@@ -1474,9 +1440,6 @@ public class ReservaServiceTest {
                                 eq(horaFin),
                                 eq(reservaId)))
                                 .thenReturn(List.of());
-
-                when(canchaService.obtenerCapacidadCancha(1))
-                                .thenReturn(1);
 
                 when(reservaRepository.save(any(Reserva.class)))
                                 .thenReturn(reservaExistente);

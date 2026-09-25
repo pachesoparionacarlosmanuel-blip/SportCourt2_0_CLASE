@@ -91,7 +91,7 @@ entorno donde corra el `.jar` (systemd, Docker, panel del hosting, etc.):
 
 ```bash
 cd backend
-./mvnw clean package -DskipTests   # o sin -DskipTests si quieres correr los 119 tests antes
+./mvnw clean package -DskipTests   # o sin -DskipTests si quieres correr los 130 tests antes
 java -jar target/backend-0.0.1-SNAPSHOT.jar
 ```
 

@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Servicio de negocio para reservas
- * CRÍTICO: Implementa validaciones complejas de duplicados y capacidad
+ * CRÍTICO: Implementa validaciones de duplicados y disponibilidad de la cancha
  */
 @Service
 @Transactional
@@ -45,7 +45,7 @@ public class ReservaService {
      * 3. Hora inicio < Hora fin
      * 4. NO hay reserva duplicada (mismo usuario, cancha, fecha, horas
      * superpuestas)
-     * 5. Capacidad disponible
+     * 5. La cancha no está ocupada por otra reserva activa en ese horario
      */
     public Reserva crearReserva(ReservaDTO reservaDTO) {
 
@@ -57,7 +57,7 @@ public class ReservaService {
         canchaService.obtenerCancha(reservaDTO.getCanchaId());
 
         // Serializa las reservas concurrentes sobre la misma cancha hasta
-        // que esta transacción termine (evita superar la capacidad).
+        // que esta transacción termine (evita reservas superpuestas).
         canchaService.bloquearCancha(reservaDTO.getCanchaId());
 
         // Validación 3: Hora válida
@@ -66,8 +66,8 @@ public class ReservaService {
         // Validación 4: NO hay duplicados
         validarNoDuplicada(reservaDTO, null);
 
-        // Validación 5: Capacidad disponible
-        validarCapacidadDisponible(
+        // Validación 5: La cancha no está ocupada en ese horario
+        validarCanchaDisponible(
                 reservaDTO.getCanchaId(),
                 reservaDTO.getFecha(),
                 reservaDTO.getHoraInicio(),
@@ -119,7 +119,7 @@ public class ReservaService {
         // Validar que no exista otra reserva en ese horario
         validarNoDuplicada(reservaDTO, id);
 
-        validarCapacidadDisponible(
+        validarCanchaDisponible(
                 reservaDTO.getCanchaId(),
                 reservaDTO.getFecha(),
                 reservaDTO.getHoraInicio(),
@@ -245,42 +245,33 @@ public class ReservaService {
     }
 
     /**
-     * VALIDACIÓN 5: Verificar capacidad disponible
-     * 
-     * Capacidad disponible = capacidad total - reservas activas en misma cancha y
-     * fecha
+     * VALIDACIÓN 5: Verificar que la cancha esté libre en ese horario
+     *
+     * Una reserva ocupa la cancha completa: si ya existe otra reserva activa
+     * (no cancelada) que se superpone en la misma cancha y fecha, se rechaza.
+     * La "capacidad" de la cancha es solo informativa (personas que caben)
+     * y no limita el número de reservas.
      */
-    private void validarCapacidadDisponible(
+    private void validarCanchaDisponible(
             Integer canchaId,
             java.time.LocalDate fecha,
             java.time.LocalTime horaInicio,
             java.time.LocalTime horaFin,
             Integer reservaIdExcluir) {
 
-        // Canchas sin capacidad definida en la BD (dato legado anterior a la
-        // columna "capacidad") se tratan como uso exclusivo: 1 reserva activa
-        // a la vez, en vez de lanzar NullPointerException al desempaquetar.
-        Integer capacidadTotal = canchaService.obtenerCapacidadCancha(canchaId);
-        if (capacidadTotal == null) {
-            capacidadTotal = 1;
-        }
-
-        long reservasActivas = reservaRepository.buscarReservasSuperpuestas(
+        boolean ocupada = reservaRepository.buscarReservasSuperpuestas(
                 canchaId,
                 fecha,
                 horaInicio,
                 horaFin,
                 reservaIdExcluir).stream()
-                .filter(r -> !"cancelada".equalsIgnoreCase(r.getEstado()))
-                .count();
+                .anyMatch(r -> !"cancelada".equalsIgnoreCase(r.getEstado()));
 
-        if (reservasActivas >= capacidadTotal) {
+        if (ocupada) {
             throw new BusinessException(
-                    "No hay capacidad disponible en la cancha. " +
-                            "Capacidad: " + capacidadTotal + ", " +
-                            "Reservas activas: " + reservasActivas);
+                    "La cancha ya está reservada en ese horario. " +
+                            "Fecha: " + fecha + ", Horas: " + horaInicio + "-" + horaFin);
         }
-
     }
 
     /**

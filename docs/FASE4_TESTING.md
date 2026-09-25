@@ -1,11 +1,17 @@
 # ✅ FASE 4: TESTING Y VALIDACIÓN - COMPLETADA, corriendo en CI
 
+> **Actualizado 2026-09-25:** total actual **130 tests** (0 fallos). Desde la cifra anterior
+> (119) se añadieron tests de login (rotación de sesión, `ErrorResponse`, logout), de estado
+> inicial asignado por el backend y de inscripciones. Además cambió la regla de reservas:
+> **una reserva ocupa la cancha completa** (la capacidad es solo informativa), y los tests de
+> `ReservaServiceTest`/`ReservaControllerTest` se adaptaron a esa regla.
+
 > **Actualizado 2026-09-14 (integration tests de endpoints):** se agregaron 47 tests de
 > integración HTTP reales (`@SpringBootTest` + `java.net.http.HttpClient`, sin mocks, mismo
 > patrón que `CsrfLoginFlowTest`) para los 5 controladores (Cancha, Clase, Reserva,
 > Inscripcion, Usuario) en `backend/src/test/java/.../controller/`, ejercitando el flujo
 > completo controller→service→repository→H2: CRUD autenticado, validación 400, 404,
-> conflictos 409 (duplicados/capacidad/cupos), autorización 401/403. Total: 71 → **119 tests**.
+> conflictos 409 (duplicados/capacidad/cupos), autorización 401/403. Total en ese momento: 71 → 119 tests (hoy 130, ver arriba).
 > Estas pruebas, junto con una verificación E2E manual contra el MySQL real, detectaron dos
 > bugs reales que ya se corrigieron: (1) `AccessDeniedException` de los chequeos de
 > propietario devolvía 500 en vez de 403 (faltaba `@ExceptionHandler` en
@@ -35,8 +41,8 @@
 | Métrica | Valor |
 |---------|-------|
 | **Suites de test** | 5 de servicio (Mockito) + 1 de contexto Spring (H2) + 1 de integración CSRF end-to-end + 5 de integración de endpoints (H2) |
-| **Total de Tests** | 119 tests |
-| **Tests Pasados** | 119 ✅ |
+| **Total de Tests** | 130 tests |
+| **Tests Pasados** | 130 ✅ |
 | **Tests Fallidos** | 0 |
 | **Cobertura** | Servicios críticos (ReservaService, InscripcionService) + flujo CSRF/login real + endpoints HTTP completos de los 5 recursos |
 | **CI** | `validar-backend` en GitHub Actions corre `mvn test` en cada push/PR |
@@ -83,7 +89,7 @@ en tu máquina que en el runner de GitHub Actions.
 - Obtener reserva existente
 - Cancelar reserva exitosamente
 - Reserva SIN superposición (hora fin = nueva inicio)
-- Capacidad disponible - reserva exitosa
+- Una reserva cancelada no bloquea el horario
 
 ❌ **Casos de Error - Validaciones:**
 
@@ -101,8 +107,11 @@ en tu máquina que en el runner de GitHub Actions.
 - Superposición completa → BusinessException ✓
 - Superposición en inicio → BusinessException ✓
 
-**VALIDACIÓN 5: Capacidad no disponible**
-- Sin capacidad → BusinessException ✓
+**VALIDACIÓN 5: Cancha ocupada (una reserva ocupa la cancha completa)**
+- Otra reserva activa en el mismo horario → BusinessException ✓
+- Superposición parcial con otra reserva → BusinessException ✓
+- Dos usuarios distintos no pueden reservar la misma cancha a la vez ✓
+- La capacidad de la cancha no se consulta (NULL no afecta) ✓
 
 **VALIDACIÓN 6: Autorización por propietario al cancelar**
 - Usuario NO puede cancelar la reserva de otro usuario → BusinessException/AccessDenied ✓
@@ -116,7 +125,7 @@ en tu máquina que en el runner de GitHub Actions.
 **Ampliación (nueva): Actualizar reserva (`actualizarReserva`)**
 - Conserva su propio horario sin marcarlo como duplicado ✓
 - Rechaza horario duplicado con otra reserva del mismo usuario ✓
-- Rechaza horario sin capacidad disponible ✓
+- Rechaza horario con la cancha ocupada ✓
 - Una reserva cancelada no bloquea el mismo horario ✓
 - No genera falso conflicto consigo misma ✓
 
@@ -191,7 +200,7 @@ datos vía repositorios.
 |-------|-------|-------|
 | `CanchaControllerTest` | 10 | GET público, CRUD admin, 400, 404, 403 sin rol ADMIN |
 | `ClaseControllerTest` | 9 | GET público, CRUD admin, 400, 404, 403 sin rol ADMIN |
-| `ReservaControllerTest` | 12 | Crear/cancelar autenticado, 400, 404, 409 (duplicado/capacidad), 403 (propietario, DELETE solo ADMIN) |
+| `ReservaControllerTest` | 12 | Crear/cancelar autenticado, 400, 404, 409 (duplicado/cancha ocupada), 403 (propietario, DELETE solo ADMIN) |
 | `InscripcionControllerTest` | 11 | Crear/cancelar/eliminar autenticado, 400, 404, 409 (duplicado/cupos), 403 (propietario) |
 | `UsuarioControllerTest` | 5 | 403 sin rol ADMIN, respuesta sin password |
 
@@ -204,8 +213,8 @@ archivos `*IT.java`.
   en vez de 403 → agregado `@ExceptionHandler(AccessDeniedException.class)` en
   `GlobalExceptionHandler`.
 - `NullPointerException` al reservar una cancha con `capacidad` NULL (detectado en la
-  verificación E2E contra MySQL real, no en H2) → `ReservaService` trata `capacidad` NULL
-  como 1.
+  verificación E2E contra MySQL real, no en H2) → `ReservaService` trataba `capacidad` NULL
+  como 1. Desde 2026-09-25 la capacidad ya no interviene en las reservas.
 
 ---
 
@@ -220,7 +229,7 @@ Usuario 1 intenta reservar:
 ├─ Validación 3: ¿Horarios válidos? (inicio < fin) ✓
 ├─ Validación 4: ¿NO hay duplicado? 
 │   └─ Búsqueda: Usuario + Cancha + Fecha + Horas NO superpuestas ✓
-└─ Validación 5: ¿Hay capacidad? ✓
+└─ Validación 5: ¿La cancha está libre en ese horario? ✓
     → Reserva CREADA ✓
 ```
 
@@ -301,22 +310,23 @@ public class [Service]Test {
 ./mvnw test
 ```
 
-### Resultado (verificado 2026-09-14)
+### Resultado (verificado 2026-09-25)
 ```
 BackendApplicationTests:      1 test
 CanchaControllerTest:        10 tests
 ClaseControllerTest:          9 tests
-InscripcionControllerTest:   11 tests
+InscripcionControllerTest:   12 tests
+LoginControllerTest:          3 tests
 ReservaControllerTest:       12 tests
 UsuarioControllerTest:        5 tests
 CsrfLoginFlowTest:            4 tests
 CanchaServiceTest:            7 tests
 ClaseServiceTest:             7 tests
-InscripcionServiceTest:      12 tests
-ReservaServiceTest:          35 tests
+InscripcionServiceTest:      15 tests
+ReservaServiceTest:          39 tests
 UsuarioServiceTest:           6 tests
 --------------------------------
-Tests run: 119, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 130, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
@@ -329,10 +339,10 @@ BUILD SUCCESS
 ✓ Detecta overlaps correctamente
 ✓ Diferencia entre "exacto" y "superpuesto"
 
-### Conteo de Capacidad
-✓ Cuenta SOLO reservas activas (estado != "cancelada")
-✓ Compara con capacidad total de cancha
-✓ Lanza BusinessException si no hay espacio
+### Cancha ocupada
+✓ Considera SOLO reservas activas (estado != "cancelada")
+✓ Una reserva ocupa la cancha completa (la capacidad es solo informativa)
+✓ Lanza BusinessException si ya hay otra reserva superpuesta
 
 ### Conteo de Cupos
 ✓ Cuenta SOLO inscripciones activas (estado != "cancelada")
@@ -371,7 +381,7 @@ Fase 5 (Frontend) y la verificación E2E contra MySQL real ya se completaron el
 ## 📦 Archivos Creados/Modificados
 
 ### Creados (11 test suites)
-- ✅ ReservaServiceTest.java — ampliado con tests de actualización, listado, autorización por propietario/ADMIN (cancelar y eliminar) y regresión de `capacidad` NULL
+- ✅ ReservaServiceTest.java — ampliado con tests de actualización, listado, autorización por propietario/ADMIN (cancelar y eliminar) y regla "una reserva ocupa la cancha completa"
 - ✅ InscripcionServiceTest.java (403 líneas)
 - ✅ CanchaServiceTest.java (142 líneas)
 - ✅ ClaseServiceTest.java (142 líneas)
@@ -393,7 +403,7 @@ Fase 5 (Frontend) y la verificación E2E contra MySQL real ya se completaron el
 ✅ Fase 1: Seguridad (+ endurecimiento CSRF/autorización) — 100%
 ✅ Fase 2: Arquitectura (DTOs)       — 100%
 ✅ Fase 3: Lógica de Negocio (Services) — 100%
-✅ Fase 4: Testing (119 tests, H2 en CI) — 100%
+✅ Fase 4: Testing (130 tests, H2 en CI) — 100%
 ✅ Fase 5: Frontend (JavaScript) + verificación E2E — 100%
 ✅ Fase 6: Documentación (OpenAPI)   — 100%
 
@@ -405,7 +415,7 @@ Progreso Total: 100%
 ## 📊 Estadísticas
 
 - **Archivos de test**: 13 (5 de servicio + `BackendApplicationTests` + `CsrfLoginFlowTest` + 6 de integración de endpoints)
-- **Tests totales**: 119
+- **Tests totales**: 130
 - **Cobertura**: Todos los servicios críticos + flujo CSRF/login real + los 5 controladores end-to-end
 - **Tasa de éxito**: 100%
 - **CI**: corre automáticamente en cada push/PR (`validar-backend`)

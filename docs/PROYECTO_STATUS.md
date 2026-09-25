@@ -70,7 +70,7 @@
 │ FASE 4: TESTING Y VALIDACIÓN                                  │
 │ ✅ COMPLETADA — 2026-09-14 (unit + integración de endpoints)   │
 │                                                                │
-│ - ✅ 129 tests (JUnit 5 + Mockito + 1 @SpringBootTest + 1       │
+│ - ✅ 130 tests (JUnit 5 + Mockito + 1 @SpringBootTest + 1       │
 │   integración CSRF end-to-end + 47 integration tests de        │
 │   endpoints), 0 fallos                                         │
 │ - ✅ Pruebas de duplicados y superposición de horarios         │
@@ -256,7 +256,7 @@
 |---------|-------|
 | **Archivos Java (main)** | 38 |
 | **Archivos Java (test)** | 13 |
-| **Tests (unit + contexto Spring + integración CSRF + integración de endpoints)** | 129 (0 fallos), corren en CI |
+| **Tests (unit + contexto Spring + integración CSRF + integración de endpoints)** | 130 (0 fallos), corren en CI |
 | **Servicios implementados** | 5 |
 | **Validaciones críticas** | 9 |
 | **Controladores actualizados** | 5 |
@@ -340,7 +340,7 @@
 ✅ 2. Cancha existe → ResourceNotFoundException (404)  
 ✅ 3. Horarios válidos → BusinessException (409)
 ✅ 4. NO hay duplicados → BusinessException (409)
-✅ 5. Capacidad disponible → BusinessException (409)
+✅ 5. Cancha libre en ese horario (una reserva ocupa la cancha completa) → BusinessException (409)
 ```
 
 **Lógica de Duplicado:** Usuario intenta 2da reserva en MISMA cancha, MISMA fecha, con horas QUE SE SUPERPONEN
@@ -380,7 +380,7 @@
 | Cualquier usuario autenticado podía eliminar la reserva de otro por ID | 1C | Chequeo de propietario/ADMIN en `eliminarReserva` | ✅ FIXED |
 | XSS almacenado: nombres/descripciones se insertaban sin escapar en innerHTML | 1C | Helper escapeHtml() en todas las vistas dinámicas | ✅ FIXED |
 | `AccessDeniedException` lanzada manualmente en ReservaController/ReservaService e InscripcionController/InscripcionService (chequeo de propietario) no tiene `@ExceptionHandler` específico en `GlobalExceptionHandler` → cae al handler genérico y respondía **500** en vez de 403/404 cuando un usuario consulta/cancela la reserva o inscripción de otro | 4 (integration tests) | `@ExceptionHandler(AccessDeniedException.class)` → 403 en GlobalExceptionHandler | ✅ FIXED — 2026-09-14 |
-| `NullPointerException` al crear una reserva sobre una cancha con `capacidad` NULL en MySQL (p. ej. canchas reales id 1 y 2): el service hacía unboxing de `capacidadTotal` sin verificar null → 500 en vez de manejarlo como dato faltante | 5 (E2E contra MySQL real) | `ReservaService.validarCapacidadDisponible`: capacidad NULL se trata como 1 (uso exclusivo, comportamiento legado) | ✅ FIXED — 2026-09-14 |
+| `NullPointerException` al crear una reserva sobre una cancha con `capacidad` NULL en MySQL (p. ej. canchas reales id 1 y 2): el service hacía unboxing de `capacidadTotal` sin verificar null → 500 en vez de manejarlo como dato faltante | 5 (E2E contra MySQL real) | `ReservaService.validarCapacidadDisponible`: capacidad NULL se trata como 1 (uso exclusivo, comportamiento legado). **Reemplazado 2026-09-25:** `validarCanchaDisponible` ya no usa la capacidad (una reserva ocupa la cancha completa), así que NULL no afecta | ✅ FIXED — 2026-09-14 |
 | Fallback de rol vacío/nulo en `LoginController` usaba `"USER"` (inglés) en vez de `"usuario"`, inconsistente con el contrato de negocio BD/API/frontend | 1D | `rol = "usuario"` en `LoginController` | ✅ FIXED — 2026-09-14 |
 | No existía script versionado para normalizar valores históricos inconsistentes de `rol` en MySQL (`'ADMIN'`, `'User'`, etc.) — la limpieza solo se había hecho manualmente contra la BD, sin quedar en el repo | 1D | `backend/src/main/resources/sql/normalize_rol_usuarios.sql` | ✅ FIXED — 2026-09-14 |
 | Fixtures de 5 suites de integration tests (`crearUsuario(...)`) guardaban `"ADMIN"`/`"USER"` (inglés) como valor del campo `rol`, sin reflejar el contrato real (`"admin"`/`"usuario"`) que usa el frontend | 1D | Fixtures actualizados a `"admin"`/`"usuario"` en CanchaControllerTest, ReservaControllerTest, ClaseControllerTest, InscripcionControllerTest, UsuarioControllerTest | ✅ FIXED — 2026-09-14 |
@@ -402,7 +402,7 @@
 - `backend/src/test/java/com/sportcourt/backend/` - `BackendApplicationTests` (contexto Spring, perfil
   "test" con H2) + `CsrfLoginFlowTest` (4 tests de integración end-to-end del flujo CSRF, sin mocks)
   + `service/` con 5 suites de unit tests + `controller/` con 6 suites de integración HTTP de
-  endpoints (129 tests en total)
+  endpoints (130 tests en total)
 
 ### Base de Datos
 - `sportcourt` (MySQL)
@@ -473,7 +473,7 @@ Build Tool: Maven
 
 ### Bugs detectados y corregidos (Fase 4/5) — 2026-09-14
 1. [x] `GlobalExceptionHandler`: agregado `@ExceptionHandler(AccessDeniedException.class)` → 403 (antes 500 en chequeos de propietario de Reserva/Inscripcion)
-2. [x] `ReservaService`: `capacidad` NULL en `cancha` se trata como 1 en vez de lanzar NPE (antes 500 al reservar canchas reales sin capacidad definida, p. ej. id 1 y 2)
+2. [x] `ReservaService`: `capacidad` NULL en `cancha` se trata como 1 en vez de lanzar NPE (antes 500 al reservar canchas reales sin capacidad definida, p. ej. id 1 y 2). *Superado el 2026-09-25: la capacidad ya no interviene en las reservas.*
 
 Ambos corregidos, con tests de regresión agregados (unit + integration) y reverificados en vivo
 contra el MySQL real (mismo flujo de usuario de prueba con limpieza, sin dejar rastro).
@@ -505,7 +505,13 @@ DOCUMENTAC.  ████████████████████ ✅ 10
 Progreso General: ████████████████████ 100%
 ```
 
-**Último BUILD:** 2026-09-25 - BUILD SUCCESS ✅ (129/129 tests, 0 fallos, corre en CI)  
+**Último BUILD:** 2026-09-25 - BUILD SUCCESS ✅ (130/130 tests, 0 fallos, corre en CI)  
+**Cambios de revisión (2026-09-25, 2ª tanda):** una reserva ocupa la cancha completa
+(`ReservaService.validarCanchaDisponible`; `capacidad` pasa a ser solo informativa, por lo que
+las canchas con capacidad NULL ya no necesitan tratamiento especial); nuevo `POST /api/logout`
+que invalida la sesión HTTP (el frontend lo llama al cerrar sesión); el botón "Ver cancha" de
+Mis Reservas lleva a `canchas.html?cancha=ID` y resalta la cancha; conteo de tests unificado
+a 130 en toda la documentación.
 **Correcciones (2026-09-25):** rotación del ID de sesión en `/api/login` (anti fijación de
 sesión); errores de login con el `ErrorResponse` estándar; el estado inicial de reservas
 (`confirmada`) e inscripciones (`inscrita`) lo asigna el backend y la edición conserva el

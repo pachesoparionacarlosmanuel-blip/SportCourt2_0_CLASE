@@ -8,6 +8,11 @@
 > encontró que lanzaba `NullPointerException` al reservar una cancha real con `capacidad`
 > NULL en MySQL (dato legado, p. ej. canchas id 1 y 2). Se corrigió tratando `capacidad`
 > NULL como 1 (uso exclusivo). Ver `docs/PROYECTO_STATUS.md` para el detalle.
+>
+> ❗ **Cambio de regla (2026-09-25):** la Validación 5 ya no usa la capacidad. **Una reserva
+> ocupa la cancha completa**: si existe otra reserva activa superpuesta en la misma cancha y
+> fecha, se rechaza (409). `capacidad` es solo informativa (personas que caben), por lo que
+> un valor NULL ya no afecta a las reservas. Método: `validarCanchaDisponible`.
 
 ---
 
@@ -190,10 +195,10 @@ canchaService.obtenerCancha(reservaDTO.getCanchaId());
 // Intentar 11:00-12:00 → ACEPTADO (no se superpone)
 ```
 
-**Validación 5: Capacidad disponible**
+**Validación 5: Cancha libre en ese horario**
 ```java
-// capacidadDisponible = capacidadTotal - reservasActivas
-// Lanza: BusinessException si NO hay cupo disponible
+// Una reserva ocupa la cancha completa (la capacidad es solo informativa)
+// Lanza: BusinessException si ya hay otra reserva activa superpuesta
 ```
 
 #### Otros métodos
@@ -470,13 +475,13 @@ POST /api/reservas → 409 CONFLICT
 "Ya existe una reserva en ese horario"
 ```
 
-### Caso 5: Sin cupos disponibles
+### Caso 5: Cancha ya ocupada
 ```
-Cancha con capacidad 1, ya tiene 1 reserva activa
-Intenta agregar otra
+La cancha ya tiene 1 reserva activa de 10:00 a 11:00
+Otro usuario intenta reservarla de 10:30 a 11:30
 
 POST /api/reservas → 409 CONFLICT
-"No hay capacidad disponible"
+"La cancha ya está reservada en ese horario"
 ```
 
 ---

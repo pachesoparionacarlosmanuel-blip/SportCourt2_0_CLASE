@@ -150,7 +150,7 @@ class ReservaControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/reservas sin capacidad disponible devuelve 409")
+    @DisplayName("POST /api/reservas sobre una cancha ya ocupada en ese horario devuelve 409")
     void crearReservaSinCapacidadDevuelve409() throws Exception {
         Cancha cancha = crearCancha(1); // capacidad = 1
         LocalDate fecha = LocalDate.now().plusDays(5);
@@ -168,7 +168,7 @@ class ReservaControllerTest extends AbstractControllerTest {
         Session session2 = login(email2, "UserPass123");
 
         // Mismo horario exacto, usuario DIFERENTE: no es "duplicada" (usuario
-        // distinto) pero sí supera la capacidad de la cancha (1).
+        // distinto) pero la cancha ya está ocupada: una reserva la ocupa completa.
         HttpResponse<String> segunda = mutate(session2, "POST", "/api/reservas",
                 reservaDto(cancha.getId(), fecha, "14:00:00", "15:00:00"));
 

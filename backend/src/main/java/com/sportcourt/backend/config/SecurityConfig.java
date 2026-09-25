@@ -70,6 +70,18 @@ public class SecurityConfig {
 
                                 .securityContext(securityContext -> securityContext.securityContextRepository(
                                                 new HttpSessionSecurityContextRepository()))
+
+                                // Cierre de sesión: POST /api/logout (con token CSRF) invalida
+                                // la sesión HTTP en el servidor y borra la cookie JSESSIONID.
+                                // Responde 204 en vez de redirigir, porque lo consume fetch().
+                                .logout(logout -> logout
+                                                .logoutUrl("/api/logout")
+                                                .invalidateHttpSession(true)
+                                                .clearAuthentication(true)
+                                                .deleteCookies("JSESSIONID")
+                                                .logoutSuccessHandler(
+                                                                new org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler(
+                                                                                org.springframework.http.HttpStatus.NO_CONTENT)))
                                 // Configuración de autorización.
                                 .authorizeHttpRequests(auth -> auth
 

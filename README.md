@@ -99,7 +99,7 @@ npm run build:css  # compila minificado, para producción
 ## Tests
 
 ```bash
-# Backend (129 tests: unitarios + contexto Spring con H2 en memoria + integración CSRF
+# Backend (130 tests: unitarios + contexto Spring con H2 en memoria + integración CSRF
 # + integración HTTP de endpoints, todo con H2 en memoria)
 cd backend
 ./mvnw test
@@ -122,9 +122,26 @@ http://localhost:8080/swagger-ui/index.html
 
 - **Visitante:** ve información pública, canchas y clases disponibles; puede acceder al login.
 - **Usuario:** inicia sesión, reserva/cancela canchas, se inscribe a clases, consulta su perfil.
+
+> **Regla de reservas:** una reserva ocupa la cancha completa. Si ya existe una reserva
+> activa que se superpone en la misma cancha y fecha, la nueva se rechaza con 409. El campo
+> `capacidad` de la cancha es solo informativo (personas que caben) y puede quedar NULL.
 - **Administrador:** gestiona canchas, clases y reservas desde el panel admin.
 
 Detalle completo de permisos en [AGENTS.md](AGENTS.md#8-roles-del-sistema).
+
+## Entrega (ZIP limpio)
+
+Para entregar solo el código fuente (sin `node_modules`, `backend/target` ni `.git`),
+genera el ZIP a partir del último commit; `git archive` incluye únicamente los archivos
+versionados:
+
+```bash
+git archive --format=zip -o SportCourt2.0.zip HEAD
+```
+
+Tras descomprimirlo: `npm install` recrea `node_modules` (solo hace falta para recompilar
+el CSS, `app.min.css` ya viene versionado) y `./mvnw package` recrea `backend/target`.
 
 ## Documentación adicional
 

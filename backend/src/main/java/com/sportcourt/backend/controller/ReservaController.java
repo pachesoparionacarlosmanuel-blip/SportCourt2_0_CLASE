@@ -62,7 +62,7 @@ public class ReservaController {
     /**
      * Crear una nueva reserva
      * Validaciones: usuario existe, cancha existe, horarios válidos, no duplicados,
-     * capacidad disponible
+     * cancha libre en ese horario (una reserva ocupa la cancha completa)
      */
     @PostMapping
     public ResponseEntity<Reserva> crearReserva(@Valid @RequestBody ReservaDTO reservaDTO) {
