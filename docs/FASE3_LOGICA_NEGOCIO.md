@@ -94,7 +94,7 @@ La arquitectura implementada sigue el patrón de **Service Layer** con inyecció
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
-│          Base de Datos MySQL (sportcourt)                │
+│          Base de Datos MySQL (sportcourt_clase)          │
 └─────────────────────────────────────────────────────────┘
 ```
 

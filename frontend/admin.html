@@ -41,6 +41,7 @@
       <button class="admin-tab active" data-tab="canchas">Canchas</button>
       <button class="admin-tab" data-tab="clases">Clases</button>
       <button class="admin-tab" data-tab="reservas">Reservas</button>
+      <button class="admin-tab" data-tab="usuarios">Usuarios</button>
     </div>
 
     <section class="admin-panel active" id="panel-canchas">
@@ -75,6 +76,24 @@
           </tr>
         </thead>
         <tbody id="admin-reservations-body"></tbody>
+      </table>
+    </section>
+
+    <section class="admin-panel" id="panel-usuarios">
+      <div class="admin-toolbar">
+        <h2>Todos los usuarios</h2>
+        <button class="add-btn" id="add-user-btn">+ Agregar usuario</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="admin-users-body"></tbody>
       </table>
     </section>
 
