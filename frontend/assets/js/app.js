@@ -19,6 +19,22 @@ async function parseApiError(respuesta, mensajePorDefecto) {
   }
 }
 
+// Formato de correo según el rol (misma regla que UsuarioService).
+// Solo mejora la experiencia: la validación real la hace el backend.
+const EMAIL_USUARIO_RE = /^[A-Za-z0-9._%+-]+@(gmail|hotmail)\.com$/i;
+const EMAIL_ADMIN_RE = /^[A-Z][a-z]+[A-Z][a-z]+_Administrador@sportcourt\.com\.pe$/;
+function validarEmailSegunRol(email, rol) {
+  const valor = String(email || '').trim();
+  if (rol === 'admin') {
+    return EMAIL_ADMIN_RE.test(valor)
+      ? ''
+      : 'El correo de un administrador debe tener el formato PrimerNombrePrimerApellido_Administrador@sportcourt.com.pe (ej.: CarlosPacheco_Administrador@sportcourt.com.pe)';
+  }
+  return EMAIL_USUARIO_RE.test(valor)
+    ? ''
+    : 'El correo de un usuario debe terminar en @gmail.com o @hotmail.com';
+}
+
 // Confirma que la respuesta de la API tenga la forma esperada (array) antes
 // de usarla en .map/.find/.some; evita romper la página si el backend
 // devuelve un error inesperado o cambia de forma.
@@ -857,8 +873,7 @@ async function cargarMisInscripciones() {
 
     const misInscripciones = inscripciones
       .filter(function (i) {
-        return Number(i.usuarioId) === currentUserId &&
-          i.estado === 'inscrita';
+        return Number(i.usuarioId) === currentUserId;
       })
       .filter(function (i, index, self) {
         return index === self.findIndex(function (j) {
@@ -872,18 +887,56 @@ async function cargarMisInscripciones() {
     }
 
     lista.innerHTML = misInscripciones.map(function (i) {
-      return '<div class="mb-3 p-4 bg-white rounded-lg border">' +
+      return '<div class="mb-3 p-4 bg-white border rounded-lg">' +
         '<p class="font-semibold">Clase #' + i.claseId + '</p>' +
         '<p class="text-sm text-gray-500">Fecha de inscripción: ' + i.fecha + '</p>' +
         '<p class="text-sm text-green-600">Inscrita</p>' +
+        '<button type="button" class="cancelar-inscripcion-btn mt-2 text-red-600 hover:text-red-800" data-id="' + i.id + '">' +
+        'Cancelar inscripción' +
+        '</button>' +
         '</div>';
     }).join('');
+
+
+    lista.querySelectorAll('.cancelar-inscripcion-btn').forEach(function (boton) {
+      boton.addEventListener('click', function () {
+        cancelarInscripcion(Number(this.dataset.id));
+      });
+    });
+
 
   } catch (error) {
     console.error('Error al cargar mis inscripciones:', error);
     lista.innerHTML = '<p class="text-red-500">No se pudieron cargar las inscripciones.</p>';
   }
 }
+
+async function cancelarInscripcion(id) {
+  if (!confirm('¿Estás seguro de que deseas cancelar esta inscripción?')) {
+    return;
+  }
+
+  try {
+    const respuesta = await fetch(API_URL + '/inscripciones/' + id + '/cancelar', {
+      method: 'PUT',
+      credentials: 'include'
+    });
+
+    if (!respuesta.ok) {
+      const error = await respuesta.text();
+      throw new Error(error || 'No se pudo cancelar la inscripción');
+    }
+
+    alert('Inscripción cancelada correctamente');
+
+    cargarMisInscripciones();
+
+  } catch (error) {
+    console.error('Error al cancelar inscripción:', error);
+    alert('No se pudo cancelar la inscripción');
+  }
+}
+
 // ---------------------------------------------
 // Perfil: muestra los datos de la sesión actual
 // ---------------------------------------------
@@ -1338,6 +1391,130 @@ if (document.body.dataset.page === 'admin' && getRole() === 'admin') {
     });
   }
 
+  // ---- Usuarios (MySQL vía /api/usuarios) ----
+  let users = [];
+  const usersTableBody = document.getElementById('admin-users-body');
+
+  async function cargarUsuariosAdmin() {
+    try {
+      const respuesta = await fetch(API_URL + '/usuarios', { credentials: 'include' });
+      if (!respuesta.ok) throw new Error('Error HTTP: ' + respuesta.status);
+      users = asArray(await respuesta.json(), 'GET /usuarios (panel usuarios)');
+    } catch (error) {
+      console.error('Error al cargar usuarios:', error);
+      users = [];
+    }
+    renderUsers();
+  }
+
+  function renderUsers() {
+    usersTableBody.innerHTML = users.map(function (u) {
+      return '<tr data-id="' + u.id + '">' +
+        '<td>' + escapeHtml(u.nombre) + '</td>' +
+        '<td>' + escapeHtml(u.email) + '</td>' +
+        '<td>' + escapeHtml(u.rol === 'admin' ? 'Administrador' : 'Usuario') + '</td>' +
+        '<td><button class="edit-item-btn" data-type="user" data-id="' + u.id + '">Editar</button></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  cargarUsuariosAdmin();
+
+  function openUserForm(existing) {
+    const u = existing || { nombre: '', email: '', rol: 'usuario' };
+    formPanelInner.innerHTML =
+      '<h2>' + (existing ? 'Editar usuario' : 'Agregar usuario') + '</h2>' +
+      '<form id="item-form" novalidate>' +
+      '<div class="field"><label>Nombre</label><input type="text" id="f-nombre" value="' + escapeHtml(u.nombre) + '" required></div>' +
+      '<div class="field"><label>Rol</label><select id="f-rol">' +
+      '<option value="usuario"' + (u.rol !== 'admin' ? ' selected' : '') + '>Usuario</option>' +
+      '<option value="admin"' + (u.rol === 'admin' ? ' selected' : '') + '>Administrador</option>' +
+      '</select></div>' +
+      '<div class="field"><label>Correo</label><input type="email" id="f-email" value="' + escapeHtml(u.email) + '" required>' +
+      '<p id="f-email-error" style="color:#dc2626;font-size:0.8rem;margin-top:0.25rem;"></p></div>' +
+      '<div class="field"><label>Contraseña' + (existing ? ' (dejar vacío para no cambiarla)' : '') + '</label>' +
+      '<input type="password" id="f-password"' + (existing ? '' : ' required') + '></div>' +
+      '<div class="form-panel-actions">' +
+      '<button type="button" class="cancel-form-btn">Cancelar</button>' +
+      '<button type="submit" class="save-btn">Guardar</button>' +
+      '</div>' +
+      '</form>';
+
+    formPanel.classList.add('open');
+    document.querySelector('.cancel-form-btn').addEventListener('click', closeForm);
+
+    const emailInput = document.getElementById('f-email');
+    const rolSelect = document.getElementById('f-rol');
+    const emailError = document.getElementById('f-email-error');
+
+    // Mensaje inmediato mientras se escribe el correo o se cambia el rol
+    function mostrarErrorEmail() {
+      emailError.textContent = emailInput.value.trim()
+        ? validarEmailSegunRol(emailInput.value, rolSelect.value)
+        : '';
+    }
+    emailInput.addEventListener('input', mostrarErrorEmail);
+    rolSelect.addEventListener('change', mostrarErrorEmail);
+
+    document.getElementById('item-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const data = {
+        nombre: document.getElementById('f-nombre').value.trim(),
+        email: emailInput.value.trim(),
+        rol: rolSelect.value,
+        password: document.getElementById('f-password').value
+      };
+
+      if (!data.nombre) {
+        alert('El nombre es requerido.');
+        return;
+      }
+      const errorEmail = validarEmailSegunRol(data.email, data.rol);
+      if (errorEmail) {
+        emailError.textContent = errorEmail;
+        return;
+      }
+      if (!existing && !data.password) {
+        alert('La contraseña es requerida.');
+        return;
+      }
+      if (existing && !data.password) {
+        delete data.password;
+      }
+
+      try {
+        const respuesta = await fetch(
+          existing ? API_URL + '/usuarios/' + existing.id : API_URL + '/usuarios', {
+          method: existing ? 'PUT' : 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-XSRF-TOKEN': await getCsrfTokenAsync()
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!respuesta.ok) {
+          alert(await parseApiError(respuesta, 'No se pudo guardar el usuario.'));
+          return;
+        }
+
+        await respuesta.json();
+        await cargarUsuariosAdmin();
+        closeForm();
+
+        alert(existing
+          ? 'Usuario actualizado correctamente en MySQL.'
+          : 'Usuario creado correctamente en MySQL.');
+
+      } catch (error) {
+        console.error('Error al guardar el usuario:', error);
+        alert('No se pudo guardar el usuario en MySQL.');
+      }
+    });
+  }
+
   function closeForm() {
     formPanel.classList.remove('open');
     formPanelInner.innerHTML = '';
@@ -1346,6 +1523,7 @@ if (document.body.dataset.page === 'admin' && getRole() === 'admin') {
   // Botón "Agregar" según la pestaña activa
   document.getElementById('add-court-btn').addEventListener('click', function () { openCourtForm(null); });
   document.getElementById('add-class-btn').addEventListener('click', function () { openClassForm(null); });
+  document.getElementById('add-user-btn').addEventListener('click', function () { openUserForm(null); });
 
   // Delegación de eventos: editar / eliminar (se re-renderiza el DOM cada vez)
   document.addEventListener('click', async function (e) {
@@ -1395,6 +1573,10 @@ if (document.body.dataset.page === 'admin' && getRole() === 'admin') {
         });
 
         openClassForm(clase);
+      } else if (editBtn.dataset.type === 'user') {
+        openUserForm(users.find(function (u) {
+          return String(u.id) === String(id);
+        }));
       }
     }
 

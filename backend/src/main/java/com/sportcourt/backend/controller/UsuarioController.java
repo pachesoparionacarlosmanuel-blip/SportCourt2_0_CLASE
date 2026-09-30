@@ -4,6 +4,8 @@ import com.sportcourt.backend.dto.UsuarioDTO;
 import com.sportcourt.backend.service.UsuarioService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,5 +49,30 @@ public class UsuarioController {
         UsuarioDTO usuarioDTO = usuarioService.obtenerUsuarioDTO(id);
 
         return ResponseEntity.ok(usuarioDTO);
+    }
+
+    /**
+     * Crear un usuario. El formato del email se valida según el rol
+     * en UsuarioService.
+     */
+    @PostMapping("/usuarios")
+    public ResponseEntity<UsuarioDTO> crearUsuario(@Valid @RequestBody UsuarioDTO usuarioDTO) {
+
+        UsuarioDTO creado = usuarioService.crearUsuario(usuarioDTO);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    }
+
+    /**
+     * Modificar un usuario existente.
+     */
+    @PutMapping("/usuarios/{id}")
+    public ResponseEntity<UsuarioDTO> actualizarUsuario(
+            @PathVariable Integer id,
+            @Valid @RequestBody UsuarioDTO usuarioDTO) {
+
+        UsuarioDTO actualizado = usuarioService.actualizarUsuario(id, usuarioDTO);
+
+        return ResponseEntity.ok(actualizado);
     }
 }

@@ -1,9 +1,15 @@
 package com.sportcourt.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 
 /**
  * DTO para Usuario con validaciones
+ *
+ * El DTO solo comprueba que el email tenga estructura de correo válida.
+ * El dominio permitido según el rol (gmail/hotmail para usuario,
+ * _Administrador@sportcourt.com.pe para admin) es regla de negocio y se
+ * valida en UsuarioService.
  */
 public class UsuarioDTO {
 
@@ -18,6 +24,11 @@ public class UsuarioDTO {
 
     @NotBlank(message = "El rol es requerido")
     private String rol;
+
+    // Solo de entrada: se acepta al crear/modificar, nunca se serializa en
+    // las respuestas de la API.
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
 
     // Constructores
     public UsuarioDTO() {
@@ -61,5 +72,13 @@ public class UsuarioDTO {
 
     public void setRol(String rol) {
         this.rol = rol;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

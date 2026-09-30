@@ -220,9 +220,9 @@
 │   SEED_CLASSES, loadData/saveData; canchas y clases del panel  │
 │   admin ahora solo vienen de MySQL vía la API                  │
 │ - ✅ Verificación E2E contra MySQL real (contenedor Docker      │
-│   local `mysql-sportcourt`, datos reales existentes): backend  │
-│   levantado con las credenciales reales, GET /api/canchas y    │
-│   /api/clases devuelven los datos reales correctamente         │
+│   local `mysql-sportcourt_clase`, datos reales existentes):    │
+│   backend levantado con credenciales reales, GET /api/canchas  │
+│   y /api/clases devuelven los datos reales correctamente       │
 │   mapeados, login real + CSRF, creación real de una reserva y  │
 │   una inscripción de prueba (con usuario y datos temporales,   │
 │   eliminados al finalizar sin dejar rastro — conteos de tablas │
@@ -304,7 +304,7 @@
     └────────────────────────────────┘
               ↓
     ┌────────────────────────────────┐
-    │      MYSQL (sportcourt)        │
+    │      MYSQL (sportcourt_clase)      │
     │                                │
     │ usuarios | canchas | clases    │
     │ reservas | inscripciones       │
@@ -405,7 +405,7 @@
   endpoints (130 tests en total)
 
 ### Base de Datos
-- `sportcourt` (MySQL)
+- `sportcourt_clase` (MySQL)
   - usuarios, canchas, clases, reservas, inscripciones
 - `backend/src/main/resources/sql/normalize_rol_usuarios.sql` — script manual (no hay
   Flyway/Liquibase) para normalizar valores históricos de `usuarios.rol` a `admin`/`usuario`
@@ -530,8 +530,8 @@ ya no es fuente de verdad de negocio.
 deployment y manual de usuario creados.  
 **Testing (2026-09-14):** 47 integration tests HTTP nuevos (controller→service→repository→H2,
 sin mocks) para Cancha, Clase, Reserva, Inscripcion y Usuario, sumando 118/118 tests en CI.  
-**Verificación E2E (2026-09-14):** backend levantado contra el MySQL real (`sportcourt`, vía
-contenedor Docker local `mysql-sportcourt`) — lecturas (`/api/canchas`, `/api/clases`, `/api/csrf`,
+**Verificación E2E (2026-09-14):** backend levantado contra el MySQL real (`sportcourt_clase`, vía
+contenedor Docker local `mysql-sportcourt_clase`) — lecturas (`/api/canchas`, `/api/clases`, `/api/csrf`,
 autorización 403 sin sesión) y un flujo de escritura completo (usuario de prueba → login real →
 crear reserva → crear inscripción → verificar → eliminar todo) confirmados correctos, sin dejar
 datos residuales (conteos de tablas verificados idénticos antes/después).  

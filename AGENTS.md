@@ -26,7 +26,7 @@ Regla principal:
 - Antes de modificar cualquier archivo, analizar primero el problema y explicar qué se cambiará.
 - No realizar cambios destructivos sin autorización.
 - No crear otra base de datos.
-- La base de datos existente `sportcourt` es la fuente de verdad para los datos del sistema.
+- La base de datos existente `sportcourt_clase` es la fuente de verdad para los datos del sistema.
 - No utilizar localStorage como fuente de verdad para datos de negocio cuando estos deben provenir de MySQL.
 - Mantener la arquitectura existente salvo que se autorice expresamente cambiarla.
 - No eliminar funcionalidades existentes sin autorización.
@@ -66,7 +66,7 @@ OBJETIVO
 
 Base de datos existente:
 
-`sportcourt`
+`sportcourt_clase`
 
 No crear una segunda base de datos ni cambiar el nombre de la base de datos.
 

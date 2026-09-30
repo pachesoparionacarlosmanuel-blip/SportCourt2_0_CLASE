@@ -53,7 +53,7 @@ Las reglas de trabajo y la metodología del proyecto están definidas en [AGENTS
 
 - Java 21
 - Node.js 20+ (solo para compilar Tailwind CSS)
-- MySQL 8+, con la base de datos `sportcourt` ya creada (ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para el esquema de tablas)
+- MySQL 8+, con la base de datos `sportcourt_clase` ya creada (ver [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para el esquema de tablas)
 
 ## Configuración
 
@@ -68,7 +68,7 @@ Variables usadas (ver [backend/src/main/resources/application.properties](backen
 
 | Variable | Requerida | Descripción |
 |---|---|---|
-| `DB_URL` | No (default `jdbc:mysql://localhost:3306/sportcourt`) | URL JDBC de MySQL |
+| `DB_URL` | No (default `jdbc:mysql://localhost:3306/sportcourt_clase`) | URL JDBC de MySQL |
 | `DB_USERNAME` | Sí | Usuario de MySQL |
 | `DB_PASSWORD` | Sí | Contraseña de MySQL |
 | `SERVER_PORT` | No (default `8080`) | Puerto del backend |

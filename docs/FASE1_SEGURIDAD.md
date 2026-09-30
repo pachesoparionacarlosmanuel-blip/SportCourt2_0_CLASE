@@ -59,7 +59,7 @@ archivo, versionado en git.
 
 **Después:**
 ```properties
-spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/sportcourt}
+spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/sportcourt_clase}
 spring.datasource.username=${DB_USERNAME}
 spring.datasource.password=${DB_PASSWORD}
 ```
@@ -67,7 +67,7 @@ spring.datasource.password=${DB_PASSWORD}
 `DB_USERNAME` y `DB_PASSWORD` son obligatorias (sin valor por defecto): si no están
 definidas como variables de entorno, el backend no arranca — evita que alguien despliegue
 por accidente con credenciales de ejemplo. `application-dev.properties` sí trae un default
-de `DB_USERNAME` (`sportcourt`) para desarrollo local, pero nunca de la contraseña.
+de `DB_USERNAME` (`sportcourt_clase`) para desarrollo local, pero nunca de la contraseña.
 
 **Referencia:** `backend/.env.example` documenta las variables esperadas sin exponer
 valores reales.

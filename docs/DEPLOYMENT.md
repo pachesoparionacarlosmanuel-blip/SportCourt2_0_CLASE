@@ -14,7 +14,7 @@ crean bases de datos nuevas y ningún cambio destructivo se hace sin autorizaci�
 ## 2. Base de datos
 
 El backend corre con `spring.jpa.hibernate.ddl-auto=none`: **nunca crea ni modifica tablas
-automáticamente**. La base de datos `sportcourt` debe existir de antemano con la
+automáticamente**. La base de datos `sportcourt_clase` debe existir de antemano con la
 estructura esperada.
 
 Referencia del esquema, derivado directamente de las entidades JPA en
@@ -72,7 +72,7 @@ CREATE TABLE inscripcion (
 );
 ```
 
-Crea un usuario de MySQL con permisos solo sobre la base `sportcourt` (no uses el
+Crea un usuario de MySQL con permisos solo sobre la base `sportcourt_clase` (no uses el
 usuario root de MySQL en el backend).
 
 ## 3. Variables de entorno de producción
@@ -82,8 +82,8 @@ entorno donde corra el `.jar` (systemd, Docker, panel del hosting, etc.):
 
 | Variable | Valor en producción |
 |---|---|
-| `DB_URL` | `jdbc:mysql://<host-mysql>:3306/sportcourt` |
-| `DB_USERNAME` | usuario de MySQL con acceso solo a `sportcourt` |
+| `DB_URL` | `jdbc:mysql://<host-mysql>:3306/sportcourt_clase` |
+| `DB_USERNAME` | usuario de MySQL con acceso solo a `sportcourt_clase` |
 | `DB_PASSWORD` | contraseña real (nunca la del `.env.example`) |
 | `SERVER_PORT` | puerto interno del backend (por defecto `8080`) |
 
@@ -137,7 +137,7 @@ como pendientes de autorización antes de tocarlos:
 - [ ] Evaluar si `/swagger-ui/**` y `/v3/api-docs/**` deben quedar públicos en
       producción o restringirse (hoy están abiertos para facilitar el desarrollo;
       ver `SecurityConfig.java`).
-- [ ] Backups periódicos de la base `sportcourt` configurados fuera de este repo.
+- [ ] Backups periódicos de la base `sportcourt_clase` configurados fuera de este repo.
 
 ## 8. Verificación post-deploy
 
